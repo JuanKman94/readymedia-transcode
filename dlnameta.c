@@ -21,8 +21,12 @@
 
 #include <sys/stat.h>
 #include <unistd.h>
-#include <wand/MagickWand.h>
 
+#ifdef HAVE_MAGICKWAND_7
+#include <MagickWand/MagickWand.h>
+#else
+#include <wand/MagickWand.h>
+#endif
 #include "libav.h"
 
 #include "upnpglobalvars.h"

@@ -30,7 +30,11 @@
 #include <sys/errno.h>
 #include <fcntl.h>
 
+#ifdef HAVE_MAGICKWAND_7
+#include <MagickWand/MagickWand.h>
+#else
 #include <wand/MagickWand.h>
+#endif
 #include <libexif/exif-loader.h>
 #include <jpeglib.h>
 #include <setjmp.h>
