@@ -73,7 +73,7 @@ parse_nfo(const char *path, struct dlna_meta_s *m)
 	if( !nfo )
 		return;
 	nread = fread(&buf, 1, sizeof(buf), nfo);
-	
+
 	ParseNameValue(buf, nread, &xml, 0);
 
 	val = GetValueFromNameValueList(&xml, "mime");
@@ -164,7 +164,7 @@ get_dlna_metadata_image(int fd)
 
 	m = get_dlna_metadata_image_res(format, width, height);
 	free(format);
-	
+
 	return m;
 }
 
@@ -228,9 +228,12 @@ get_dlna_metadata_audio(int fd)
 	}
 	for( i=0; i<ctx->nb_streams; i++)
 	{
-		if(ctx->streams[i]->codec->codec_type == AVMEDIA_TYPE_AUDIO )
+		if(ctx->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO )
 		{
-			ac = ctx->streams[i]->codec;
+			const AVCodecParameters *codecpar = ctx->streams[i]->codecpar;
+      const AVCodec *pCodec = avcodec_find_decoder(codecpar->codec_id);
+      ac = avcodec_alloc_context3(pCodec);
+      avcodec_parameters_to_context(ac, codecpar);
 			break;
 		}
 	}
@@ -320,6 +323,9 @@ get_dlna_metadata_audio(int fd)
 	}
 
 	lav_close(ctx);
+	if (ac != NULL) {
+		avcodec_free_context(&ac);
+	}
 
 	return m;
 }
@@ -350,13 +356,13 @@ get_dlna_metadata_video(int fd)
 	for( i=0; i<ctx->nb_streams; i++)
 	{
 		if( audio_stream == -1 &&
-			ctx->streams[i]->codec->codec_type == AVMEDIA_TYPE_AUDIO )
+			ctx->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO )
 		{
 			audio_stream = i;
 			continue;
 		}
 		else if( video_stream == -1 &&
-			ctx->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO )
+			ctx->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO )
 		{
 			video_stream = i;
 			continue;
@@ -374,15 +380,15 @@ get_dlna_metadata_video_ctx(struct AVFormatContext *ctx, int audio_stream, int v
 {
 	struct dlna_meta_s m = {0, 0};
 
-	struct AVCodecContext *ac = NULL;
-	struct AVCodecContext *vc = NULL;
+	struct AVCodecParameters *ac = NULL;
+	struct AVCodecParameters *vc = NULL;
 	if (audio_stream >= 0)
 	{
-		ac = ctx->streams[audio_stream]->codec;
+		ac = ctx->streams[audio_stream]->codecpar;
 	}
 	if (video_stream >= 0)
 	{
-		vc = ctx->streams[video_stream]->codec;
+		vc = ctx->streams[video_stream]->codecpar;
 	}
 	else
 	{
@@ -391,7 +397,7 @@ get_dlna_metadata_video_ctx(struct AVFormatContext *ctx, int audio_stream, int v
 		return m;
 	}
 	enum audio_profiles audio_profile = PROFILE_AUDIO_UNKNOWN;
-	const char *path = ctx->filename;
+	const char *path = ctx->url;
 	char *path_cpy = strdup(path);
 	const char *basepath = basename(path_cpy);
 	char nfo[PATH_MAX], *ext;
