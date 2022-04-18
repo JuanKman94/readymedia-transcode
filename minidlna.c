@@ -101,7 +101,7 @@
 # warning "Your SQLite3 library appears to be too old!  Please use 3.5.1 or newer."
 # define sqlite3_threadsafe() 0
 #endif
- 
+
 /* OpenAndConfHTTPSocket() :
  * setup the socket used to handle incoming HTTP connections. */
 static int
@@ -146,7 +146,7 @@ OpenAndConfHTTPSocket(unsigned short port)
 	return s;
 }
 
-/* Handler for the SIGTERM signal (kill) 
+/* Handler for the SIGTERM signal (kill)
  * SIGINT is also handled */
 static void
 sigterm(int sig)
@@ -206,10 +206,10 @@ transcode_getclient(struct client_type_s *clients, char *str, char **ret_str)
 	{
 		formats = str;
 	}
-	
+
 	/* move the beginning of str */
 	*ret_str = formats;
-	
+
 	if( ! clients[client->type].transcode_info )
 	{
 		/* create a new entry for client in the transcode list */
@@ -352,6 +352,7 @@ open_db(sqlite3 **sq3)
 		new_db = 1;
 		make_dir(db_path, S_ISVTX|S_IRWXU|S_IRWXG|S_IRWXO);
 	}
+	DPRINTF(E_WARN, L_GENERAL, "Opening sqlite database %s\n", path);
 	if (sqlite3_open(path, &db) != SQLITE_OK)
 		DPRINTF(E_FATAL, L_GENERAL, "ERROR: Failed to open sqlite database!  Exiting...\n");
 	if (sq3)
@@ -492,7 +493,7 @@ writepidfile(const char *fname, int pid, uid_t uid)
 					dir, strerror(errno));
 		}
 	}
-	
+
 	pidfile = fopen(fname, "w");
 	if (!pidfile)
 	{
@@ -503,7 +504,7 @@ writepidfile(const char *fname, int pid, uid_t uid)
 
 	if (fprintf(pidfile, "%d\n", pid) <= 0)
 	{
-		DPRINTF(E_ERROR, L_GENERAL, 
+		DPRINTF(E_ERROR, L_GENERAL,
 			"Unable to write to pidfile %s: %s\n", fname, strerror(errno));
 		ret = -1;
 	}
@@ -588,7 +589,7 @@ init(int argc, char **argv)
 	strncat(uuidvalue, mac_str, 12);
 
 	getfriendlyname(friendly_name, FRIENDLYNAME_MAX_LEN);
-	
+
 	runtime_vars.port = 8200;
 	runtime_vars.notify_interval = 895;	/* seconds between SSDP announces */
 	runtime_vars.max_connections = 50;
@@ -631,7 +632,7 @@ init(int argc, char **argv)
 			break;
 		case UPNPSERIAL:
 			strncpyt(serialnumber, ary_options[i].value, SERIALNUMBER_MAX_LEN);
-			break;				
+			break;
 		case UPNPMODEL_NAME:
 			strncpyt(modelname, ary_options[i].value, MODELNAME_MAX_LEN);
 			break;
@@ -1029,7 +1030,7 @@ init(int argc, char **argv)
 	{
 		DPRINTF(E_ERROR, L_GENERAL, SERVER_NAME " is already running. EXITING.\n");
 		return 1;
-	}	
+	}
 
 	set_startup_time();
 
@@ -1251,25 +1252,25 @@ main(int argc, char **argv)
 		/* select open sockets (SSDP, HTTP listen, and all HTTP soap sockets) */
 		FD_ZERO(&readset);
 
-		if (sssdp >= 0) 
+		if (sssdp >= 0)
 		{
 			FD_SET(sssdp, &readset);
 			max_fd = MAX(max_fd, sssdp);
 		}
-		
-		if (shttpl >= 0) 
+
+		if (shttpl >= 0)
 		{
 			FD_SET(shttpl, &readset);
 			max_fd = MAX(max_fd, shttpl);
 		}
 #ifdef TIVO_SUPPORT
-		if (sbeacon >= 0) 
+		if (sbeacon >= 0)
 		{
 			FD_SET(sbeacon, &readset);
 			max_fd = MAX(max_fd, sbeacon);
 		}
 #endif
-		if (smonitor >= 0) 
+		if (smonitor >= 0)
 		{
 			FD_SET(smonitor, &readset);
 			max_fd = MAX(max_fd, smonitor);
@@ -1411,7 +1412,7 @@ shutdown:
 	if (sbeacon >= 0)
 		close(sbeacon);
 #endif
-	
+
 	for (i = 0; i < n_lan_addr; i++)
 	{
 		SendSSDPGoodbyes(lan_addr[i].snotify);

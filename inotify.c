@@ -154,15 +154,23 @@ inotify_create_watches(int fd)
 	for( media_path = media_dirs; media_path != NULL; media_path = media_path->next )
 	{
 		DPRINTF(E_DEBUG, L_INOTIFY, "Add watch to %s\n", media_path->path);
-		add_watch(fd, media_path->path);
-		num_watches++;
+		if (add_watch(fd, media_path->path) == -1) {
+			DPRINTF(E_WARN, L_INOTIFY, "Add watch failed\n");
+		} else {
+			num_watches++;
+		}
 	}
 	sql_get_table(db, "SELECT PATH from DETAILS where MIME is NULL and PATH is not NULL", &result, &rows, NULL);
 	for( i=1; i <= rows; i++ )
 	{
 		DPRINTF(E_DEBUG, L_INOTIFY, "Add watch to %s\n", result[i]);
-		add_watch(fd, result[i]);
-		num_watches++;
+		if (add_watch(fd, result[i]) == -1) {
+			// This happens when a directory is completely removed, then the binary is started.
+			// TODO: In this case, the object should be removed from table, or table should be re-initialized.
+			DPRINTF(E_WARN, L_INOTIFY, "Add watch failed\n");
+		} else {
+			num_watches++;
+		}
 	}
 	sqlite3_free_table(result);
 
