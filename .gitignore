@@ -4,6 +4,7 @@ Makefile.in
 Makefile
 aclocal.m4
 autom4te.cache/
+compile
 config.guess
 config.h.in
 config.rpath
@@ -33,5 +34,6 @@ po/POTFILES
 po/*.gmo
 po/stamp-po
 stamp-h1
+tagutils/.dirstamp
 .deps/
 *.o

@@ -173,14 +173,13 @@ needs_transcode_audio(const char* path, enum client_types client)
 {
 	int ret;
 	AVFormatContext *ctx = NULL;
-	struct AVCodecContext *ac = NULL;
+	struct AVCodecParameters *ac = NULL;
 	int i;
 	struct transcode_list_format_s *transcode_format_it = NULL;
-	struct AVCodec *codec = NULL;
+	const struct AVCodec *codec = NULL;
 	struct transcode_info_s *clients_info[] = {client_types[0].transcode_info, client_types[client].transcode_info};
 
 	/* prepare ffmpeg */
-	av_register_all();
 	ret = lav_open(&ctx, path);
 	if( ret != 0 )
 	{
@@ -191,18 +190,18 @@ needs_transcode_audio(const char* path, enum client_types client)
 	}
 	for( i=0; i<ctx->nb_streams; i++)
 	{
-		if( ctx->streams[i]->codec->codec_type == AVMEDIA_TYPE_AUDIO )
+		if( ctx->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO )
 		{
-			ac = ctx->streams[i]->codec;
+			ac = ctx->streams[i]->codecpar;
 			break;
 		}
 	}
 	if ( ac )
 	{
 		codec = avcodec_find_decoder(ac->codec_id);
-		
+
 		for ( i = 0; i < 2; i++ )
-		{	
+		{
 			if (clients_info[i])
 			{
 				transcode_format_it = clients_info[i]->audio_codecs;
@@ -235,16 +234,15 @@ needs_transcode_video(const char* path, enum client_types client)
 {
 	int ret;
 	AVFormatContext *ctx = NULL;
-	struct AVCodec *codec = NULL;
+	const struct AVCodec *codec = NULL;
 	int audio_stream = -1, video_stream = -1;
-	struct AVCodecContext *ac = NULL;
-	struct AVCodecContext *vc = NULL;
+	struct AVCodecParameters *ac = NULL;
+	struct AVCodecParameters *vc = NULL;
 	int i;
 	struct transcode_list_format_s *transcode_format_it = NULL;
 	struct transcode_info_s *clients_info[] = {client_types[0].transcode_info, client_types[client].transcode_info};
 
 	/* prepare ffmpeg */
-	av_register_all();
 	ret = lav_open(&ctx, path);
 	if( ret != 0 )
 	{
@@ -256,17 +254,17 @@ needs_transcode_video(const char* path, enum client_types client)
 	for( i=0; i<ctx->nb_streams; i++)
 	{
 		if( audio_stream == -1 &&
-			ctx->streams[i]->codec->codec_type == AVMEDIA_TYPE_AUDIO )
+			ctx->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO )
 		{
 			audio_stream = i;
-			ac = ctx->streams[audio_stream]->codec;
+			ac = ctx->streams[audio_stream]->codecpar;
 			continue;
 		}
 		else if( video_stream == -1 &&
-			ctx->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO )
+			ctx->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO )
 		{
 			video_stream = i;
-			vc = ctx->streams[video_stream]->codec;
+			vc = ctx->streams[video_stream]->codecpar;
 			continue;
 		}
 	}
@@ -317,7 +315,7 @@ needs_transcode_video(const char* path, enum client_types client)
 				lav_close(ctx);
 				return 1;
 			}
-			
+
 			codec = avcodec_find_decoder(vc->codec_id);
 			while( transcode_format_it )
 			{
@@ -330,7 +328,7 @@ needs_transcode_video(const char* path, enum client_types client)
 			}
 		}
 	}
-	
+
 	/* check the audio codec */
 	for ( i = 0; i < 2; i++ )
 	{

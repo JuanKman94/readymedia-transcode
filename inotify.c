@@ -154,18 +154,26 @@ inotify_create_watches(int fd)
 	for( media_path = media_dirs; media_path != NULL; media_path = media_path->next )
 	{
 		DPRINTF(E_DEBUG, L_INOTIFY, "Add watch to %s\n", media_path->path);
-		add_watch(fd, media_path->path);
-		num_watches++;
+		if (add_watch(fd, media_path->path) == -1) {
+			DPRINTF(E_WARN, L_INOTIFY, "Add watch failed\n");
+		} else {
+			num_watches++;
+		}
 	}
 	sql_get_table(db, "SELECT PATH from DETAILS where MIME is NULL and PATH is not NULL", &result, &rows, NULL);
 	for( i=1; i <= rows; i++ )
 	{
 		DPRINTF(E_DEBUG, L_INOTIFY, "Add watch to %s\n", result[i]);
-		add_watch(fd, result[i]);
-		num_watches++;
+		if (add_watch(fd, result[i]) == -1) {
+			// This happens when a directory is completely removed, then the binary is started.
+			// TODO: In this case, the object should be removed from table, or table should be re-initialized.
+			DPRINTF(E_WARN, L_INOTIFY, "Add watch failed\n");
+		} else {
+			num_watches++;
+		}
 	}
 	sqlite3_free_table(result);
-		
+
 	max_watches = fopen("/proc/sys/fs/inotify/max_user_watches", "r");
 	if( max_watches )
 	{
@@ -208,7 +216,7 @@ inotify_create_watches(int fd)
 	return rows;
 }
 
-int 
+int
 inotify_remove_watches(int fd)
 {
 	struct watch *w = watches;
@@ -352,7 +360,7 @@ inotify_insert_file(char * name, const char * path)
 			return -1;
 			break;
 	}
-	
+
 	/* If it's already in the database and hasn't been modified, skip it. */
 	if( stat(path, &st) != 0 )
 		return -1;
@@ -649,7 +657,7 @@ start_inotify()
 	int length, i = 0;
 	char * esc_name = NULL;
 	struct stat st;
-        
+
 	pollfds[0].fd = inotify_init();
 	pollfds[0].events = POLLIN;
 
@@ -666,8 +674,7 @@ start_inotify()
 	if (setpriority(PRIO_PROCESS, 0, 19) == -1)
 		DPRINTF(E_WARN, L_INOTIFY,  "Failed to reduce inotify thread priority\n");
 	sqlite3_release_memory(1<<31);
-	av_register_all();
-        
+
 	while( !quitting )
 	{
                 length = poll(pollfds, 1, timeout);
